@@ -7,7 +7,7 @@
 #######################################################################
 #######################################################################
 
-plot.SDistribution <- function(x, fun, nPoints = 3000, coverage = 0.99,
+plot.SDistribution <- function(x, fun=c('pdf','cdf'), nPoints = 3000, coverage = 0.99,
                                plot = TRUE, iterative = FALSE, add = FALSE,
                                layout.row = TRUE, layout.col = FALSE, 
                                margin = TRUE,...){
@@ -95,6 +95,16 @@ plot.SDistribution <- function(x, fun, nPoints = 3000, coverage = 0.99,
       validPlots <- append(validPlots, values = i)
     }}
   
+
+  names=c("pdf","cdf","hazard","survival")
+  notations=c("f(x)","F(x)","h(x)","S(x)")
+  func_notation=validPlots
+  
+  for(i in 1:length(names)){
+    func_notation=replace(func_notation,func_notation==names[i],notations[i])
+  }
+  
+  
   #######################################################################
   #######                     graphical parameters                #######
   #######################################################################
@@ -148,34 +158,43 @@ plot.SDistribution <- function(x, fun, nPoints = 3000, coverage = 0.99,
     
     return(returnList)
   } 
-  else{ if(add == FALSE){
+  else if(add == FALSE){
+    
+    
     if(testContinuous(x)){
-      if("pdf" %in% validPlots){
-        # plot pdf
-        plot(x = plotStructure$points, y = plotStructure$pdf, type = "l",
-             main = "pdf", xlab = "x", ylab = "f(x)",...)}
-      if("cdf" %in% validPlots){
-        # plot cdf
-        plot(x = plotStructure$points, y = plotStructure$cdf, type = "l",
-             main = "cdf", xlab = "x", ylab = "F(x)",...)}
-      if("quantile" %in% validPlots){
-        # plot x against quantile
-        plot(x = plotStructure$cdf, y = plotStructure$points, type = "l",
-             main = "quantile", xlab = "q", ylab = parse(text = "F^(-1)(q)"),...)}
-      if("hazard" %in% validPlots){
-        # plot hazard function
-        plot(x = plotStructure$points, y = plotStructure$hazard, type = "l",
-             main = "hazard", xlab = "x", ylab = "h(x)",...)}
-      if("cumHazard" %in% validPlots){
-        # plot cumulative hazard function
-        plot(x = plotStructure$points, y = plotStructure$cumHazard, type = "l",
-             main = "cumulative hazard", xlab = "x", ylab = expression(Lambda(x)),...)}
-      if("survival" %in% validPlots){
-        # plot survival function
-        plot(x = plotStructure$points, y = plotStructure$survival, type = "l",
-             main = "survival", xlab = "x", ylab = "S(x)",...)}
       
-    }}}
+      for(i in 1:length(validPlots)){
+        if(validPlots[i]=='cumHazard'){
+          plot(x = plotStructure$points, y = plotStructure[[validPlots[i]]], type = "l",main=validPlots[i],xlab='x',ylab=expression(Lambda(x)),...)
+        }else if(validPlots[i]=='quantile'){
+
+            plot(x = plotStructure$cdf, y = plotStructure$points, type = "l",
+                 main = "quantile", xlab = "q", ylab = parse(text = "F^(-1)(q)"),...)
+        }else{
+          plot(x = plotStructure$points, y = plotStructure[[validPlots[i]]], type = "l",main=validPlots[i],xlab='x',ylab=func_notation[i],...)
+        }}
+      
+      }else if(testDiscrete(x)){ 
+        
+          
+        for(i in 1:length(validPlots)){
+          if(validPlots[i]=='cumHazard'){
+            plot(x = plotStructure$points, y = plotStructure[[validPlots[i]]], type = "l",main=validPlots[i],xlab='x',ylab=expression(Lambda(x)),...)
+          }else if(validPlots[i]=='cdf'){
+            plot(ecdf(plotStructure$points), main='cdf',xlab='x',ylab='F(x)',...)
+          }else if(validPlots[i]=='pdf'){
+            plot(x=plotStructure$points,y=plotStructure[[validPlots[i]]],type='h',
+                 main='pdf',xlab='x',ylab='f(x)',...)
+          }else if(validPlots[i]=='quantile'){
+            plot(x = plotStructure$cdf, y = plotStructure$points, type = "l",
+                 main = "quantile", xlab = "q", ylab = parse(text = "F^(-1)(q)"),...)
+          }else{
+            plot(x = plotStructure$points, y = plotStructure[[validPlots[i]]], type = "l",main=validPlots[i],xlab='x',ylab=func_notation[i],...)
+          }}
+
+        
+    
+    }}
   
   #######################################################################
   #######                         line plots                      #######
@@ -202,12 +221,24 @@ plot.SDistribution <- function(x, fun, nPoints = 3000, coverage = 0.99,
 }
 
 
-
-
-
 #######################################################################
 # example
 #######################################################################
+#Plotting discrete variables
+my_binom=Binomial$new()
+my_geom=Geometric$new()
+plot(my_binom,fun='cdf',coverage=1)
+plot(my_binom, plot = TRUE, 
+     fun = c("cdf", "pdf", "quantile","survival","hazard","cumHazard", "SomeNonExistingFun"),
+     layout.row = T, margin = T, col = "blue", add = F, iterative = F, 
+     coverage = 0.99)
+plot(my_geom, plot = TRUE, 
+     fun = c("cdf", "pdf", "quantile","survival","hazard","cumHazard", "SomeNonExistingFun"),
+     layout.row = T, margin = T, col = "blue", add = F, iterative = F, 
+     coverage = 0.99)
+
+
+#Continuous
 my.norm <- Normal$new(mean = 2, sd = 1.5)
 my.norm.two <- Normal$new(mean = 2.5, sd = 1)
 
